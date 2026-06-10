@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:appflowy/core/helpers/url_launcher.dart';
 import 'package:appflowy/features/page_access_level/logic/page_access_level_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/bottom_sheet/bottom_sheet.dart';
 import 'package:appflowy/mobile/presentation/home/workspaces/create_workspace_menu.dart';
+import 'package:appflowy/mobile/presentation/widgets/widgets.dart';
 import 'package:appflowy/plugins/document/presentation/editor_notification.dart';
 import 'package:appflowy/plugins/document/presentation/editor_plugins/copy_and_paste/clipboard_service.dart';
 import 'package:appflowy/plugins/shared/share/constants.dart';
@@ -13,6 +15,7 @@ import 'package:appflowy/plugins/shared/share/share_bloc.dart';
 import 'package:appflowy/shared/error_code/error_code_map.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/util/string_extension.dart';
+import 'package:appflowy/workspace/application/export/document_exporter.dart';
 import 'package:appflowy/workspace/application/favorite/favorite_bloc.dart';
 import 'package:appflowy/workspace/application/view/prelude.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
@@ -25,6 +28,8 @@ import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MobileViewPageMoreBottomSheet extends StatelessWidget {
@@ -114,6 +119,9 @@ class MobileViewPageMoreBottomSheet extends StatelessWidget {
         _copyShareLink(context);
         context.pop();
         break;
+      case MobileViewBottomSheetBodyAction.export:
+        await _showExportSheet(context);
+        break;
       case MobileViewBottomSheetBodyAction.updatePathName:
         _updatePathName(context);
       case MobileViewBottomSheetBodyAction.lockPage:
@@ -127,6 +135,57 @@ class MobileViewPageMoreBottomSheet extends StatelessWidget {
         // no need to implement, rename is handled by the onRename callback.
         throw UnimplementedError();
     }
+  }
+
+  Future<void> _showExportSheet(BuildContext context) async {
+    await showMobileBottomSheet(
+      context,
+      showDragHandle: true,
+      showDivider: false,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (sheetContext) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final entry in const [
+              (DocumentExportType.markdown, 'Markdown (.md)'),
+              (DocumentExportType.html, 'HTML (.html)'),
+              (DocumentExportType.text, 'Plain text (.txt)'),
+            ])
+              FlowyOptionTile.text(
+                text: entry.$2,
+                height: 52.0,
+                showTopBorder: false,
+                showBottomBorder: false,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_exportAndShare(entry.$1));
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _exportAndShare(DocumentExportType type) async {
+    final result = await DocumentExporter(view).export(type);
+    final content = result.fold((s) => s, (_) => null);
+    if (content == null) {
+      Log.error('[Export] failed to export ${view.id}');
+      return;
+    }
+    final ext = switch (type) {
+      DocumentExportType.markdown => 'md',
+      DocumentExportType.html => 'html',
+      DocumentExportType.text => 'txt',
+      DocumentExportType.json => 'json',
+    };
+    final name = view.name.isEmpty ? 'document' : view.name;
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/${name.toFileName()}.$ext');
+    await file.writeAsString(content);
+    await Share.shareXFiles([XFile(file.path)]);
   }
 
   Future<void> _lockPage(
