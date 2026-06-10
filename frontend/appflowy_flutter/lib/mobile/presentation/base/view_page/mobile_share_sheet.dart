@@ -4,6 +4,7 @@ import 'package:appflowy/features/share_tab/logic/share_tab_bloc.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/people_with_access_section.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/share_with_user_widget.dart';
 import 'package:appflowy/mobile/presentation/bottom_sheet/bottom_sheet.dart';
+import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:collection/collection.dart';
@@ -47,7 +48,28 @@ class _MobileSharePeopleBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
-    return BlocBuilder<ShareTabBloc, ShareTabState>(
+    return BlocConsumer<ShareTabBloc, ShareTabState>(
+      listenWhen: (prev, curr) =>
+          prev.shareResult != curr.shareResult ||
+          prev.removeResult != curr.removeResult ||
+          prev.updateAccessLevelResult != curr.updateAccessLevelResult,
+      listener: (context, state) {
+        // Surface invite/remove/update outcomes (incl. backend errors like the
+        // self-hosted cloud not supporting guest editors) instead of failing silently.
+        void toast(result, String successMsg) {
+          result?.fold(
+            (_) => showToastNotification(message: successMsg),
+            (error) => showToastNotification(
+              message: error.msg,
+              type: ToastificationType.error,
+            ),
+          );
+        }
+
+        toast(state.shareResult, 'Invitation sent');
+        toast(state.removeResult, 'Access removed');
+        toast(state.updateAccessLevelResult, 'Access updated');
+      },
       builder: (context, state) {
         if (state.isLoading) {
           return const Padding(
