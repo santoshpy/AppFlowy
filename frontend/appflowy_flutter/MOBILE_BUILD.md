@@ -12,6 +12,8 @@ xcconfig-based signing setup so the tracked project stays contributor-portable.
 APPFLOWY_CLOUD_URL=http://<your-cloud-host>   # e.g. http://192.168.1.18 on a LAN
 AUTHENTICATOR_TYPE=2                            # MUST be 0 or 2 (rust rejects 3/4)
 APPFLOWY_BRAND_NAME=Teamflowy                   # overrides "AppFlowy" in the UI
+SENTRY_DSN=                                     # optional: crash telemetry (empty = off)
+UPDATE_FEED_URL=                                # optional: desktop appcast (empty = updater off)
 ```
 
 - `APPFLOWY_CLOUD_URL` is **authoritative**: when set it always wins over any saved
@@ -19,6 +21,10 @@ APPFLOWY_BRAND_NAME=Teamflowy                   # overrides "AppFlowy" in the UI
   The in-app cloud-URL controls are shown **read-only** while it is pinned
   (`Env.isCloudUrlPinned`).
 - `APPFLOWY_BRAND_NAME` overrides the `appName` i18n key via `BrandAssetLoader`.
+- `SENTRY_DSN` (empty by default) enables crash/error reporting via `sentry_flutter`;
+  no-op when unset. `UPDATE_FEED_URL` (empty) keeps the desktop auto-updater **off** so
+  the fork never checks upstream AppFlowy releases.
+- After editing `.env`, re-run `cargo make code_generation` to regenerate `env.g.dart`.
 
 ## 2. Code generation
 
@@ -63,7 +69,37 @@ flutter run -d <device-id> --release  # release (runs standalone; ptrace warning
 iOS debug builds are JIT and only run while `flutter run` is attached; use
 `--release` for a build that launches from the home screen untethered.
 
-## 5. Entitlements
+**Android:** `flutter run -d <android-device>` (build needs the Android rust core via
+`cargo make --profile development-android <...>`). The app reaches the LAN cloud over
+cleartext only because of the scoped network config in §5 — see below.
+
+## 5. Network & transport (cleartext now, TLS later)
+
+The self-host is reached over **cleartext http on a trusted LAN**, scoped narrowly so
+neither platform's blanket protection is disabled:
+- **Android** — `android/app/src/main/res/xml/network_security_config.xml` permits
+  cleartext **only** for the configured host. Its `<domain>` **must match the host in
+  `.env APPFLOWY_CLOUD_URL`** — update it when your LAN IP/host changes.
+- **iOS** — `NSAllowsLocalNetworking` (Info.plist) permits private-range LAN hosts while
+  ATS stays enforced for all real-domain traffic.
+
+> ⚠️ Until TLS, session tokens traverse the LAN in plaintext. Use only on a trusted,
+> isolated network.
+
+### Switch to HTTPS (recommended for production)
+
+1. **Server** — terminate TLS at the self-host (nginx reverse-proxy + a cert; an
+   internal-CA cert is fine for a private deployment). This is a change in the
+   `AppFlowy-Cloud` repo's nginx/compose config.
+2. **gotrue** — ensure `GOTRUE_URI_ALLOW_LIST` includes
+   `appflowy-flutter://login-callback` and `GOTRUE_SITE_URL` is set, or mobile
+   magic-link/OAuth login hangs on the callback.
+3. **Client** — set `APPFLOWY_CLOUD_URL=https://<host>` in `.env`, trust the internal CA
+   on devices if used, then **remove the cleartext exemptions**: delete the
+   `<domain-config>` from `network_security_config.xml` and the `NSAllowsLocalNetworking`
+   key from `Info.plist`. Rebuild.
+
+## 6. Entitlements
 
 `ios/Runner/Runner.entitlements` is stripped to empty for free-team signing. The
 real functional impact is small:
