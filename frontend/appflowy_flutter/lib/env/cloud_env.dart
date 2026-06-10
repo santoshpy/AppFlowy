@@ -202,6 +202,24 @@ class AppFlowyCloudSharedEnv {
   AuthenticatorType get authenticatorType => _authenticatorType;
 
   static Future<AppFlowyCloudSharedEnv> fromEnv() async {
+    // A cloud URL pinned at build time via .env (APPFLOWY_CLOUD_URL) is
+    // AUTHORITATIVE: always use it, ignore any in-app/saved (KV) override, and
+    // never fall back to the public cloud. This keeps a self-hosted build
+    // pointed at exactly the configured server (and sends the rust-valid
+    // AppFlowy Cloud type = 2).
+    if (Env.afCloudUrl.isNotEmpty) {
+      return AppFlowyCloudSharedEnv(
+        authenticatorType: AuthenticatorType.appflowyCloud,
+        appflowyCloudConfig: AppFlowyCloudConfiguration(
+          base_url: Env.afCloudUrl,
+          ws_base_url: await _getAppFlowyCloudWSUrl(Env.afCloudUrl),
+          gotrue_url: await _getAppFlowyCloudGotrueUrl(Env.afCloudUrl),
+          enable_sync_trace: false,
+          base_web_domain: Env.baseWebDomain,
+        ),
+      );
+    }
+
     // If [Env.enableCustomCloud] is true, then use the custom cloud configuration.
     if (Env.enableCustomCloud) {
       // Use the custom cloud configuration.
@@ -299,6 +317,12 @@ Future<AppFlowyCloudConfiguration> getAppFlowyCloudConfig(
 }
 
 Future<String> getAppFlowyCloudUrl() async {
+  // A .env-pinned URL is authoritative (see AppFlowyCloudSharedEnv.fromEnv): it
+  // overrides any saved (KV) value so the build always targets the configured
+  // server instead of the public cloud.
+  if (Env.afCloudUrl.isNotEmpty) {
+    return Env.afCloudUrl;
+  }
   final result =
       await getIt<KeyValueStorage>().get(KVKeys.kAppflowyCloudBaseURL);
   return result ?? kAppflowyCloudUrl;
@@ -307,7 +331,10 @@ Future<String> getAppFlowyCloudUrl() async {
 Future<String> getAppFlowyShareDomain() async {
   final result =
       await getIt<KeyValueStorage>().get(KVKeys.kAppFlowyBaseShareDomain);
-  return result ?? ShareConstants.defaultBaseWebDomain;
+  final fallback = Env.baseWebDomain.isNotEmpty
+      ? Env.baseWebDomain
+      : ShareConstants.defaultBaseWebDomain;
+  return result ?? fallback;
 }
 
 Future<bool> getSyncLogEnabled() async {

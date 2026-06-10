@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:appflowy/env/brand_asset_loader.dart';
 import 'package:appflowy/mobile/application/mobile_router.dart';
 import 'package:appflowy/plugins/document/application/document_appearance_cubit.dart';
 import 'package:appflowy/shared/clipboard_state.dart';
@@ -109,6 +110,7 @@ class InitAppWidgetTask extends LaunchTask {
           Locale('mr', 'IN'),
         ],
         path: 'assets/translations',
+        assetLoader: const BrandAssetLoader(),
         fallbackLocale: const Locale('en', 'US'),
         useFallbackTranslations: true,
         child: Builder(

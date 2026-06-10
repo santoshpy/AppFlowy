@@ -51,4 +51,13 @@ abstract class Env {
     defaultValue: ShareConstants.defaultBaseWebDomain,
   )
   static const String baseWebDomain = _Env.baseWebDomain;
+
+  // Config-driven brand name. When set in .env, overrides the in-app `appName`
+  // (e.g. "Welcome to <brand>"). Empty -> keeps the default ("AppFlowy").
+  @EnviedField(
+    obfuscate: false,
+    varName: 'APPFLOWY_BRAND_NAME',
+    defaultValue: '',
+  )
+  static const String brandName = _Env.brandName;
 }
