@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:appflowy/core/helpers/url_launcher.dart';
 import 'package:appflowy/features/page_access_level/logic/page_access_level_bloc.dart';
+import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/mobile/presentation/base/view_page/mobile_share_sheet.dart';
 import 'package:appflowy/mobile/presentation/bottom_sheet/bottom_sheet.dart';
 import 'package:appflowy/mobile/presentation/home/workspaces/create_workspace_menu.dart';
 import 'package:appflowy/mobile/presentation/widgets/widgets.dart';
@@ -121,6 +123,19 @@ class MobileViewPageMoreBottomSheet extends StatelessWidget {
         break;
       case MobileViewBottomSheetBodyAction.export:
         await _showExportSheet(context);
+        break;
+      case MobileViewBottomSheetBodyAction.shareWithPeople:
+        final workspaceId = context
+                .read<UserWorkspaceBloc>()
+                .state
+                .currentWorkspace
+                ?.workspaceId ??
+            '';
+        showMobileSharePeopleSheet(
+          context,
+          view: view,
+          workspaceId: workspaceId,
+        );
         break;
       case MobileViewBottomSheetBodyAction.updatePathName:
         _updatePathName(context);

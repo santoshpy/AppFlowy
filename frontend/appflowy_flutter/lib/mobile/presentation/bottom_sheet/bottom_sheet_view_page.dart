@@ -28,6 +28,7 @@ enum MobileViewBottomSheetBodyAction {
   visitSite,
   copyShareLink,
   export,
+  shareWithPeople,
   updatePathName,
   lockPage;
 
@@ -182,6 +183,18 @@ class MobileViewBottomSheetBody extends StatelessWidget {
           ),
         ),
         _divider(),
+        // share with people (cloud pages)
+        if (view.layout.isDocumentView || view.layout.isDatabaseView) ...[
+          MobileQuickActionButton(
+            text: 'Share with people',
+            icon: FlowySvgs.shared_with_me_m,
+            iconSize: const Size.square(18),
+            onTap: () => onAction(
+              MobileViewBottomSheetBodyAction.shareWithPeople,
+            ),
+          ),
+          _divider(),
+        ],
         // export (documents only)
         if (view.layout.isDocumentView) ...[
           MobileQuickActionButton(
