@@ -20,6 +20,7 @@ import 'package:appflowy/util/color_to_hex_string.dart';
 import 'package:appflowy/util/debounce.dart';
 import 'package:appflowy/util/throttle.dart';
 import 'package:appflowy/workspace/application/view/view_listener.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-document/entities.pb.dart';
@@ -111,10 +112,56 @@ class DocumentBloc extends Bloc<DocumentEvent, DocumentState> {
     if (_saveToBlocMap) {
       _documentBlocMap.remove(documentId);
     }
+    // Capture whether the body is empty before the editor state is disposed.
+    final isBodyEmpty = state.editorState?.document.isEmpty ?? false;
     await checkDocumentIntegrity();
     await _cancelSubscriptions();
     _clearEditorState();
+    // Clean up an abandoned, never-edited "Untitled" document (reversible).
+    await _deleteDocumentIfEmptyAndUntitled(isBodyEmpty);
     return super.close();
+  }
+
+  /// Auto-cleans up abandoned, never-edited documents.
+  ///
+  /// Creating a new page eagerly persists a view with an empty name (see the
+  /// `SpaceEvent.createPage` flow). If the user leaves without adding a title or
+  /// any content, an empty "Untitled" document is left behind and clutters
+  /// Recent, the sidebar and search. When the body and the title are both empty
+  /// and the page has no sub-pages, move it to Trash (reversible) on close.
+  Future<void> _deleteDocumentIfEmptyAndUntitled(bool isBodyEmpty) async {
+    // Only standalone documents, never database-row documents.
+    if (databaseViewId != null || rowId != null) {
+      return;
+    }
+    // Skip if it is already being trashed/deleted or force-closed.
+    if (state.isDeleted || state.forceClose) {
+      return;
+    }
+    // The body must be empty.
+    if (!isBodyEmpty) {
+      return;
+    }
+
+    final view = (await ViewBackendService.getView(documentId)).toNullable();
+    if (view == null) {
+      return;
+    }
+    // The title (view name) must be empty and the page must be a leaf, so we
+    // never trash a deliberately-named page or one that has sub-pages.
+    if (view.name.trim().isNotEmpty || view.childViews.isNotEmpty) {
+      return;
+    }
+
+    final result = await ViewBackendService.deleteView(viewId: documentId);
+    result.fold(
+      (_) => Log.info(
+        '[DocumentBloc] moved empty untitled document to trash: $documentId',
+      ),
+      (error) => Log.error(
+        '[DocumentBloc] failed to trash empty untitled document: $error',
+      ),
+    );
   }
 
   Future<void> _cancelSubscriptions() async {
