@@ -61,6 +61,10 @@ class _MobileSharePeopleBody extends StatelessWidget {
             .firstWhereOrNull((u) => u.email == currentEmail)
             ?.accessLevel;
         final isFullAccess = myLevel == ShareAccessLevel.fullAccess;
+        // Enable inviting when the page has no shared users yet (so the owner can
+        // initiate sharing — they aren't listed until then), or when the current
+        // user is full-access. The server enforces the real permission either way.
+        final canInvite = state.users.isEmpty || isFullAccess;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
@@ -69,9 +73,9 @@ class _MobileSharePeopleBody extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               VSpace(theme.spacing.l),
-              // Invite by email; only a full-access user may invite.
+              // Invite by email.
               ShareWithUserWidget(
-                disabled: !isFullAccess,
+                disabled: !canInvite,
                 onInvite: (emails) => context.read<ShareTabBloc>().add(
                       ShareTabEvent.inviteUsers(
                         emails: emails,
