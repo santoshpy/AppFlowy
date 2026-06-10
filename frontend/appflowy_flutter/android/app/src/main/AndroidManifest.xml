@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <application android:label="AppFlowy" android:icon="@mipmap/ic_launcher"
-    android:name="${applicationName}">
+    android:name="${applicationName}"
+    android:networkSecurityConfig="@xml/network_security_config">
     <activity android:name=".MainActivity"
       android:exported="true"
       android:launchMode="singleInstance"
@@ -29,12 +30,13 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
       <meta-data android:name="flutter_deeplinking_enabled" android:value="true" />
-      <intent-filter android:autoVerify="true">
+      <!-- OAuth/magic-link callback uses the custom scheme appflowy-flutter://login-callback.
+           Do not autoVerify http/https here: there is no host + assetlinks.json, so
+           autoVerify would fail and greedily register the app as a candidate http handler. -->
+      <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="http" />
-        <data android:scheme="https" />
         <data android:scheme="appflowy-flutter" />
       </intent-filter>
     </activity>

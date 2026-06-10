@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Self-hosted cloud over cleartext http on a trusted LAN. The base config keeps the
+  secure Android 9+ default (cleartext denied); only the configured self-host is
+  exempted. The host below MUST match the host in .env APPFLOWY_CLOUD_URL.
+  Remove this exemption once the self-host serves over TLS (https). See MOBILE_BUILD.md.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.18</domain>
+    </domain-config>
+</network-security-config>

@@ -43,7 +43,10 @@
 		<true />
 		<key>NSAppTransportSecurity</key>
 		<dict>
-			<key>NSAllowsArbitraryLoads</key>
+			<!-- Permit cleartext only to local-network (RFC-1918/.local) hosts for the
+			     self-hosted LAN cloud; ATS stays enforced for all real-domain traffic.
+			     Remove once the self-host serves over TLS. See MOBILE_BUILD.md. -->
+			<key>NSAllowsLocalNetworking</key>
 			<true />
 		</dict>
 		<key>NSPhotoLibraryUsageDescription</key>

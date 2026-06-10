@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:appflowy/env/env.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/version_checker/version_checker.dart';
 import 'package:appflowy/startup/tasks/app_widget.dart';
@@ -17,8 +18,10 @@ import '../startup.dart';
 class AutoUpdateTask extends LaunchTask {
   AutoUpdateTask();
 
-  static const _feedUrl =
-      'https://github.com/AppFlowy-IO/AppFlowy/releases/latest/download/appcast-{os}-{arch}.xml';
+  // Drive the appcast feed from .env; empty (the default) disables the updater so a
+  // fork never checks upstream AppFlowy releases. Set UPDATE_FEED_URL to your own
+  // appcast (with {os}/{arch} placeholders) to enable desktop auto-update.
+  String get _feedUrl => Env.updateFeedUrl;
   final _listener = _AppFlowyAutoUpdaterListener();
 
   @override
@@ -52,6 +55,10 @@ class AutoUpdateTask extends LaunchTask {
   // On macOS and windows, we use auto_updater to check for updates.
   // On linux, we use the version checker to check for updates because the auto_updater is not supported.
   Future<void> _setupAutoUpdater() async {
+    if (_feedUrl.isEmpty) {
+      Log.info('[AutoUpdate] disabled (no UPDATE_FEED_URL configured)');
+      return;
+    }
     Log.info(
       '[AutoUpdate] current version: ${ApplicationInfo.applicationVersion}, current cpu architecture: ${ApplicationInfo.architecture}',
     );

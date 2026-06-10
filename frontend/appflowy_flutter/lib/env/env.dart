@@ -65,4 +65,13 @@ abstract class Env {
     defaultValue: '',
   )
   static const String brandName = _Env.brandName;
+
+  // Desktop auto-update appcast feed. Empty (the default) disables the updater so a
+  // fork never checks upstream AppFlowy releases. Set to your own appcast to enable.
+  @EnviedField(
+    obfuscate: false,
+    varName: 'UPDATE_FEED_URL',
+    defaultValue: '',
+  )
+  static const String updateFeedUrl = _Env.updateFeedUrl;
 }
