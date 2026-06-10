@@ -22,6 +22,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
 import 'package:appflowy/workspace/application/favorite/favorite_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_bloc.dart';
+import 'package:appflowy/plugins/shared/sync_indicator.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy/workspace/presentation/widgets/view_title_bar.dart';
@@ -261,6 +262,12 @@ class _MobileViewPageState extends State<MobileViewPage> {
           ),
           const HSpace(12.0),
         ]);
+      }
+      // Sync-status dot for cloud documents/databases (self-hides for local users).
+      if (view.layout.isDocumentView) {
+        actions.addAll([DocumentSyncIndicator(view: view), const HSpace(12.0)]);
+      } else if (view.layout.isDatabaseView) {
+        actions.addAll([DatabaseSyncIndicator(view: view), const HSpace(12.0)]);
       }
     }
 
