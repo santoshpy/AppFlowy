@@ -1,5 +1,5 @@
 import 'package:appflowy/features/share_tab/data/models/models.dart';
-import 'package:appflowy/features/share_tab/data/repositories/rust_share_with_user_repository_impl.dart';
+import 'package:appflowy/features/share_tab/data/repositories/object_grant_share_repository_impl.dart';
 import 'package:appflowy/features/share_tab/logic/share_tab_bloc.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/people_with_access_section.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/share_with_user_widget.dart';
@@ -7,15 +7,15 @@ import 'package:appflowy/mobile/presentation/bottom_sheet/bottom_sheet.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
-import 'package:collection/collection.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Mobile "Share with people" sheet. Lists the users a page is shared with and lets
-/// a full-access user invite / change access / remove. Reuses the desktop share-tab
-/// logic + data layer (ShareTabBloc + RustShareWithUserRepositoryImpl) and the
-/// share_tab presentation widgets — only the mobile container is new.
+/// the user invite / change access / remove. Reuses the share-tab bloc + presentation
+/// widgets, but backs them with [ObjectGrantShareRepository] (the team RBAC
+/// object-grant API) so sharing works on the OSS self-hosted cloud, which doesn't
+/// support AppFlowy's built-in guest-editor share.
 void showMobileSharePeopleSheet(
   BuildContext context, {
   required ViewPB view,
@@ -32,7 +32,7 @@ void showMobileSharePeopleSheet(
     builder: (_) {
       return BlocProvider(
         create: (_) => ShareTabBloc(
-          repository: RustShareWithUserRepositoryImpl(),
+          repository: ObjectGrantShareRepository(workspaceId: workspaceId),
           pageId: view.id,
           workspaceId: workspaceId,
         )..add(ShareTabEvent.initialize()),
@@ -79,14 +79,6 @@ class _MobileSharePeopleBody extends StatelessWidget {
         }
 
         final currentEmail = state.currentUser?.email;
-        final myLevel = state.users
-            .firstWhereOrNull((u) => u.email == currentEmail)
-            ?.accessLevel;
-        final isFullAccess = myLevel == ShareAccessLevel.fullAccess;
-        // Enable inviting when the page has no shared users yet (so the owner can
-        // initiate sharing — they aren't listed until then), or when the current
-        // user is full-access. The server enforces the real permission either way.
-        final canInvite = state.users.isEmpty || isFullAccess;
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: theme.spacing.xl),
@@ -95,9 +87,9 @@ class _MobileSharePeopleBody extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               VSpace(theme.spacing.l),
-              // Invite by email.
+              // Invite by email. The server enforces the object.manage permission,
+              // so the field is always enabled.
               ShareWithUserWidget(
-                disabled: !canInvite,
                 onInvite: (emails) => context.read<ShareTabBloc>().add(
                       ShareTabEvent.inviteUsers(
                         emails: emails,
