@@ -260,7 +260,12 @@ class InitAppFlowyCloudTask extends LaunchTask {
   }
 }
 
-// wrapper for AppLinks to support multiple listeners
+// Wrapper for AppLinks to fan a single OS uri-link stream out to multiple
+// listeners. `_appLinkSubscription` is intentionally process-lifetime: there is
+// exactly one per isolate and it is torn down when the isolate ends. It must NOT
+// be cancelled from a task's dispose() — `onInvalidAuth -> runAppFlowy()` re-runs
+// the launch pipeline, and a closed controller here would break re-auth. Per-listener
+// cleanup happens via the subscriptions returned by [listen] (see AppFlowyCloudDeepLink).
 class _AppLinkWrapper {
   _AppLinkWrapper._() {
     _appLinkSubscription = _appLinks.uriLinkStream.listen((event) {

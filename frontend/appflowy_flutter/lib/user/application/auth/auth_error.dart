@@ -8,7 +8,7 @@ class AuthError {
 
   static final emptyDeepLink = FlowyError()
     ..msg = 'Unexpected empty DeepLink'
-    ..code = ErrorCode.UnexpectedCalendarFieldType;
+    ..code = ErrorCode.Internal;
 
   static final deepLinkError = FlowyError()
     ..msg = 'DeepLink error'
