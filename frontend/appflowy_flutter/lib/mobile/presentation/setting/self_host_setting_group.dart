@@ -1,4 +1,5 @@
 import 'package:appflowy/env/cloud_env.dart';
+import 'package:appflowy/env/env.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/bottom_sheet/bottom_sheet.dart';
 import 'package:appflowy/mobile/presentation/setting/self_host/self_host_bottom_sheet.dart';
@@ -46,11 +47,17 @@ class _SelfHostSettingGroupState extends State<SelfHostSettingGroup> {
   }
 
   Widget _buildSelfHostField(String url) {
+    // When the cloud URL is pinned via .env it is authoritative and any in-app
+    // edit is ignored on restart; show it read-only instead of an editable field
+    // that silently no-ops.
+    final pinned = Env.isCloudUrlPinned;
     return MobileSettingItem(
       title: Padding(
         padding: const EdgeInsets.only(bottom: 4.0),
         child: FlowyText(
-          LocaleKeys.settings_menu_cloudURL.tr(),
+          pinned
+              ? '${LocaleKeys.settings_menu_cloudURL.tr()} (.env)'
+              : LocaleKeys.settings_menu_cloudURL.tr(),
           fontSize: 12.0,
           color: Theme.of(context).hintColor,
         ),
@@ -58,28 +65,32 @@ class _SelfHostSettingGroupState extends State<SelfHostSettingGroup> {
       subtitle: FlowyText(
         url,
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-      ),
-      onTap: () {
-        showMobileBottomSheet(
-          context,
-          showHeader: true,
-          title: LocaleKeys.editor_urlHint.tr(),
-          showCloseButton: true,
-          showDivider: false,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 8.0,
-          ),
-          builder: (_) {
-            return SelfHostUrlBottomSheet(
-              url: url,
-              type: SelfHostUrlBottomSheetType.cloudURL,
-            );
-          },
-        );
-      },
+      trailing: pinned
+          ? null
+          : const Icon(
+              Icons.chevron_right,
+            ),
+      onTap: pinned
+          ? null
+          : () {
+              showMobileBottomSheet(
+                context,
+                showHeader: true,
+                title: LocaleKeys.editor_urlHint.tr(),
+                showCloseButton: true,
+                showDivider: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                builder: (_) {
+                  return SelfHostUrlBottomSheet(
+                    url: url,
+                    type: SelfHostUrlBottomSheetType.cloudURL,
+                  );
+                },
+              );
+            },
     );
   }
 

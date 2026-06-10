@@ -31,6 +31,11 @@ abstract class Env {
   )
   static const String afCloudUrl = _Env.afCloudUrl;
 
+  /// True when the cloud URL is pinned at build time via .env (APPFLOWY_CLOUD_URL).
+  /// The in-app cloud-URL controls are shown read-only in that case, because the
+  /// pin is authoritative and any in-app override is ignored (see cloud_env.dart).
+  static bool get isCloudUrlPinned => afCloudUrl.isNotEmpty;
+
   @EnviedField(
     obfuscate: false,
     varName: 'INTERNAL_BUILD',

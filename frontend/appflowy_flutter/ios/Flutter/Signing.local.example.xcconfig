@@ -1,0 +1,6 @@
+// Copy this file to `Signing.local.xcconfig` (gitignored) and fill in your values.
+// A free/personal Apple Team works (build expires ~7 days). The bundle id must be
+// unique to your team. See MOBILE_BUILD.md.
+TEAMFLOWY_DEVELOPMENT_TEAM = ABCDE12345
+TEAMFLOWY_BUNDLE_ID = com.yourname.appflowy
+TEAMFLOWY_DISPLAY_NAME = Teamflowy

@@ -1,0 +1,14 @@
+// iOS signing identity for the team fork.
+//
+// The Runner target reads DEVELOPMENT_TEAM / PRODUCT_BUNDLE_IDENTIFIER /
+// CFBundleDisplayName from these variables (via project.pbxproj), so personal
+// signing identity never lives in the tracked project file.
+//
+// Defaults below are the upstream values. To build with your own Apple Team,
+// copy Signing.local.example.xcconfig -> Signing.local.xcconfig (gitignored) and
+// set your values there; it is optionally included at the end and overrides these.
+TEAMFLOWY_DEVELOPMENT_TEAM =
+TEAMFLOWY_BUNDLE_ID = com.appflowy.appflowy.flutter
+TEAMFLOWY_DISPLAY_NAME = AppFlowy
+
+#include? "Signing.local.xcconfig"
