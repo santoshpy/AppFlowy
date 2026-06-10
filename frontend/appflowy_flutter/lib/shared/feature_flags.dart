@@ -126,8 +126,10 @@ enum FeatureFlag {
       case FeatureFlag.inlineSubPageMention:
       case FeatureFlag.collaborativeWorkspace:
       case FeatureFlag.membersSettings:
-        return true;
+      // Team fork: per-page "Share with people" is a core feature, so enable the
+      // shared section by default (upstream ships it off).
       case FeatureFlag.sharedSection:
+        return true;
       case FeatureFlag.unknown:
         return false;
     }
