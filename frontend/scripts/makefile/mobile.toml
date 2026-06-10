@@ -146,3 +146,39 @@ script = [
   """,
 ]
 script_runner = "@duckscript"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Convenience: build the Rust core for a mobile target AND launch the Flutter app.
+# Backed by scripts/run_mobile.sh, which also handles the env quirks (Flutter
+# version pin via fvm, ~/.pub-cache/bin on PATH, protoc-gen-dart snapshot health,
+# and the correct simulator-vs-device build profile).
+#
+#   cargo make run-ios-sim             # iOS Simulator (debug)
+#   cargo make run-ios-device          # physical iOS device (debug, stays attached)
+#   cargo make run-ios-device-release  # physical iOS device (release, standalone)
+#   cargo make run-android             # Android device/emulator (debug)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[tasks.run-ios-sim]
+description = "Build the iOS-simulator core and run on a booted simulator"
+category = "Mobile"
+command = "bash"
+args = ["${CARGO_MAKE_WORKING_DIRECTORY}/scripts/run_mobile.sh", "sim"]
+
+[tasks.run-ios-device]
+description = "Build the iOS device core and run on a connected device (debug)"
+category = "Mobile"
+command = "bash"
+args = ["${CARGO_MAKE_WORKING_DIRECTORY}/scripts/run_mobile.sh", "ios", "debug"]
+
+[tasks.run-ios-device-release]
+description = "Build the iOS device core and run on a connected device (release)"
+category = "Mobile"
+command = "bash"
+args = ["${CARGO_MAKE_WORKING_DIRECTORY}/scripts/run_mobile.sh", "ios", "release"]
+
+[tasks.run-android]
+description = "Build the Android core and run on a connected device/emulator"
+category = "Mobile"
+command = "bash"
+args = ["${CARGO_MAKE_WORKING_DIRECTORY}/scripts/run_mobile.sh", "android"]

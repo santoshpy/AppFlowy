@@ -53,6 +53,26 @@ build expires after ~7 days and can't sign the stripped paid-only entitlements
 
 ## 4. Build & run
 
+### One step (recommended)
+
+`cargo make` convenience tasks build the Rust core for the target **and** launch the
+Flutter app, handling the env quirks for you (Flutter pinned to 3.27.4 via fvm,
+`~/.pub-cache/bin` on `PATH`, protoc-gen-dart snapshot health, and the right
+simulator-vs-device build profile). Run from `frontend/`:
+
+```bash
+cargo make run-ios-sim             # iOS Simulator (auto-boots one if none is running)
+cargo make run-ios-device          # physical iOS device (debug, stays attached)
+cargo make run-ios-device-release  # physical iOS device (release, standalone)
+cargo make run-android             # Android device/emulator (debug)
+```
+
+These wrap `scripts/run_mobile.sh` (callable directly too, e.g. `scripts/run_mobile.sh sim`).
+Overrides: `DEVICE_ID=<id>` to target a specific device, `FLUTTER_BIN=<path>` to use a
+specific Flutter. For the underlying steps, see below.
+
+### Manual steps
+
 ```bash
 # Rust core (dart-ffi). On Xcode 26 the device/sim link needs the clang runtime
 # for zstd's stack-probe builtins (___chkstk_darwin):
