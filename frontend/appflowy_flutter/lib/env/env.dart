@@ -12,8 +12,11 @@ abstract class Env {
     return Env.authenticatorType ==
             AuthenticatorType.appflowyCloudSelfHost.value ||
         Env.authenticatorType == AuthenticatorType.appflowyCloud.value ||
-        Env.authenticatorType == AuthenticatorType.appflowyCloudDevelop.value &&
-            _Env.afCloudUrl.isEmpty;
+        // Parenthesized so the `&& afCloudUrl.isEmpty` guard clearly binds only to
+        // the develop branch (it does already by precedence; this removes the trap).
+        (Env.authenticatorType ==
+                AuthenticatorType.appflowyCloudDevelop.value &&
+            _Env.afCloudUrl.isEmpty);
   }
 
   @EnviedField(

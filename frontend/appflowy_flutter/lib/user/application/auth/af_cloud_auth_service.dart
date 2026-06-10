@@ -82,7 +82,13 @@ class AppFlowyCloudAuthService implements AuthService {
           );
         }
 
-        return completer.future;
+        // Guard against a never-arriving deep-link callback (e.g. self-hosted
+        // gotrue missing appflowy-flutter://login-callback in URI_ALLOW_LIST):
+        // surface an error instead of an infinite spinner.
+        return completer.future.timeout(
+          const Duration(minutes: 5),
+          onTimeout: () => FlowyResult.failure(AuthError.unableToGetDeepLink),
+        );
       },
       (r) => FlowyResult.failure(r),
     );

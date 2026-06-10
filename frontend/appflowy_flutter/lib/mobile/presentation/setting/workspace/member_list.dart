@@ -147,7 +147,7 @@ class _MemberItem extends StatelessWidget {
               ),
               onPressed: (context) {
                 HapticFeedback.mediumImpact();
-                _showDeleteMenu(context);
+                _showMemberMenu(context);
               },
               padding: EdgeInsets.zero,
               child: const FlowySvg(
@@ -165,8 +165,12 @@ class _MemberItem extends StatelessWidget {
     return child;
   }
 
-  void _showDeleteMenu(BuildContext context) {
+  void _showMemberMenu(BuildContext context) {
     final workspaceMemberBloc = context.read<WorkspaceMemberBloc>();
+    // An owner can reassign a member between the non-owner roles, then remove.
+    final assignableRoles = [AFRolePB.Member, AFRolePB.Guest]
+        .where((role) => role != member.role)
+        .toList();
     showMobileBottomSheet(
       context,
       showDragHandle: true,
@@ -174,25 +178,51 @@ class _MemberItem extends StatelessWidget {
       useRootNavigator: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) {
-        return FlowyOptionTile.text(
-          text: LocaleKeys.settings_appearance_members_removeFromWorkspace.tr(),
-          height: 52.0,
-          textColor: Theme.of(context).colorScheme.error,
-          leftIcon: FlowySvg(
-            FlowySvgs.trash_s,
-            size: const Size.square(18),
-            color: Theme.of(context).colorScheme.error,
-          ),
-          showTopBorder: false,
-          showBottomBorder: false,
-          onTap: () {
-            workspaceMemberBloc.add(
-              WorkspaceMemberEvent.removeWorkspaceMemberByEmail(
-                member.email,
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final role in assignableRoles)
+              FlowyOptionTile.text(
+                text: 'Set as ${role.description}',
+                height: 52.0,
+                leftIcon: const FlowySvg(
+                  FlowySvgs.m_settings_member_s,
+                  size: Size.square(18),
+                ),
+                showTopBorder: false,
+                showBottomBorder: false,
+                onTap: () {
+                  workspaceMemberBloc.add(
+                    WorkspaceMemberEvent.updateWorkspaceMember(
+                      member.email,
+                      role,
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                },
               ),
-            );
-            Navigator.of(context).pop();
-          },
+            FlowyOptionTile.text(
+              text:
+                  LocaleKeys.settings_appearance_members_removeFromWorkspace.tr(),
+              height: 52.0,
+              textColor: Theme.of(context).colorScheme.error,
+              leftIcon: FlowySvg(
+                FlowySvgs.trash_s,
+                size: const Size.square(18),
+                color: Theme.of(context).colorScheme.error,
+              ),
+              showTopBorder: false,
+              showBottomBorder: false,
+              onTap: () {
+                workspaceMemberBloc.add(
+                  WorkspaceMemberEvent.removeWorkspaceMemberByEmail(
+                    member.email,
+                  ),
+                );
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         );
       },
     );
