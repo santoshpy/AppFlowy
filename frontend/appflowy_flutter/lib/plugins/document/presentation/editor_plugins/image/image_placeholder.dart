@@ -61,7 +61,11 @@ class ImagePlaceholderState extends State<ImagePlaceholder> {
   @override
   void didChangeDependencies() {
     if (UniversalPlatform.isMobile) {
-      dropManagerState = context.read<EditorDropManagerState>();
+      // The mobile editor has no drag-and-drop, so EditorDropManagerState is not
+      // provided. Read it nullably (matches the field type + the null-safe uses
+      // above) instead of force-reading it, which threw ProviderNotFoundException
+      // and broke every image block on mobile.
+      dropManagerState = context.read<EditorDropManagerState?>();
     }
     super.didChangeDependencies();
   }
