@@ -152,7 +152,7 @@ class ObjectGrantShareRepository implements ShareWithUserRepository {
     final grants = (data?['grants'] as List?) ?? const [];
     return grants.map((g) {
       final email = g['email'] as String? ?? '';
-      final name = (g['name'] as String?);
+      final name = g['name'] as String?;
       return SharedUser(
         email: email,
         name: name != null && name.isNotEmpty ? name : email,
